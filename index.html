@@ -350,11 +350,13 @@ function update(dt){
     boss.t+=dt;if(boss.flash>0)boss.flash-=dt*2;
     if(!boss.active){
       boss.y+=S*.5*dt;
-      if(boss.y>=boss.ty){boss.y=boss.ty;boss.yy=boss.ty;boss.active=true}
+      if(boss.y>=boss.ty){boss.y=boss.ty;boss.yy=boss.ty;boss.active=true;boss.ta=boss.t}
     }else{
       const L=s.level,amp=W/2-boss.r*1.2;
-      boss.x=W/2+Math.sin(boss.t*(.8+.1*L))*amp;
-      boss.yy=boss.ty+Math.sin(boss.t*1.7)*S*.02;
+      // the sway starts from the centre at the moment the boss arrives, so there is no sudden jump
+      const tm=boss.t-boss.ta;
+      boss.x=W/2+Math.sin(tm*(.8+.1*L))*amp;
+      boss.yy=boss.ty+Math.sin(tm*1.7)*S*.02;
       boss.shoot-=dt;
       if(boss.shoot<=0&&!s.over){
         boss.shoot=Math.max(.5,1.35-.12*L);
