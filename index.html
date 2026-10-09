@@ -80,8 +80,14 @@ let swapped=false;
 const heroKey=()=>swapped?'enemy':'hero';
 const bossKey=()=>swapped?'hero':'enemy';
 // level 2 has its own boss; other levels use the base boss face
-let bossPick='A'; // 'A' = base boss face, 'woman' = her
-const levelBossKey=()=>bossPick==='woman'?'woman':bossKey();
+let bossPick='A'; // which boss opens level 1: 'A' = base boss face, 'woman' = her
+// level 1 uses the boss picked on the start screen; every next level switches to the other boss
+const levelBossKey=()=>{
+  const first=bossPick==='woman'?'woman':bossKey();
+  const other=bossPick==='woman'?bossKey():'woman';
+  const lv=st?st.level:1;
+  return lv%2===1?first:other;
+};
 const menuBossKey=()=>bossPick==='woman'?'woman':bossKey();
 const FONT='"Secular One","Arial Hebrew",Arial,sans-serif';
 try{document.fonts.load('24px "Secular One"','שלב ניקוד')}catch(e){}
