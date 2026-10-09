@@ -1,18 +1,4 @@
-<!doctype html>
-<html lang="he">
-<head>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
-<meta name="apple-mobile-web-app-capable" content="yes">
-<meta name="mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-title" content="קרב הפנים">
-<meta name="apple-mobile-web-app-status-bar-style" content="black">
-<meta name="theme-color" content="#1b2547">
-<link rel="apple-touch-icon" href="apple-touch-icon.png">
-<link rel="icon" type="image/png" sizes="32x32" href="favicon-32.png">
-<link rel="icon" type="image/png" sizes="192x192" href="icon-192.png">
-<link rel="shortcut icon" href="favicon.ico">
-<link rel="manifest" href="manifest.webmanifest">
+<!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#fff;color:#000}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style></head><body>
 <title>קרב הפנים</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -48,8 +34,6 @@ button.gold{background:var(--gold)}
 .opt.sel::after{opacity:1}
 .opt:focus-visible{outline:3px solid var(--gold);outline-offset:4px}
 </style>
-</head>
-<body>
 <canvas id="c"></canvas>
 <div id="ui" dir="rtl" lang="he">
   <h1 class="sh"><span class="paper" id="title">קרב הפנים</span></h1>
@@ -238,7 +222,10 @@ addEventListener('resize',resize);resize();
 
 // ---------- state ----------
 let st=null,hero=null,boss=null;
-const ptr={on:false,x:0,y:0};
+const ptr={on:false,id:null,lx:0,ly:0,tx:0,ty:0};
+const SENS=1.25; // finger-to-hero movement ratio (relative drag)
+const clampHX=x=>Math.max(hero.r,Math.min(W-hero.r,x));
+const clampHY=y=>Math.max(H*.48,Math.min(H-hero.r-10,y));
 const keys={};
 let best=0;try{best=+localStorage.getItem('facebattle_best')||0}catch(e){}
 
@@ -298,13 +285,13 @@ function update(dt){
 
   if(!s.over){
     let tx=hero.x,ty=hero.y;
-    if(ptr.on){tx=ptr.x;ty=ptr.y-S*.14}
+    if(ptr.on){tx=ptr.tx;ty=ptr.ty}
     const sp=S*.9*dt;
     if(keys.ArrowLeft)tx=hero.x-sp*3;
     if(keys.ArrowRight)tx=hero.x+sp*3;
     if(keys.ArrowUp)ty=hero.y-sp*3;
     if(keys.ArrowDown)ty=hero.y+sp*3;
-    const k=Math.min(1,dt*16);
+    const k=Math.min(1,dt*22);
     hero.x+=(tx-hero.x)*k;hero.y+=(ty-hero.y)*k;
     hero.x=Math.max(hero.r,Math.min(W-hero.r,hero.x));
     hero.y=Math.max(H*.48,Math.min(H-hero.r-10,hero.y));
@@ -598,13 +585,31 @@ function showOver(){
 }
 $('go').addEventListener('click',start);
 
-cv.addEventListener('pointerdown',e=>{ptr.on=true;ptr.x=e.clientX;ptr.y=e.clientY;try{cv.setPointerCapture(e.pointerId)}catch(_){};e.preventDefault()});
-cv.addEventListener('pointermove',e=>{if(ptr.on){ptr.x=e.clientX;ptr.y=e.clientY}e.preventDefault()});
-const up=()=>{ptr.on=false};
+// Relative drag: the hero moves by how far the finger moves, never jumps to the touch point.
+cv.addEventListener('pointerdown',e=>{
+  if(ptr.on||!hero){e.preventDefault();return}
+  ptr.on=true;ptr.id=e.pointerId;
+  ptr.lx=e.clientX;ptr.ly=e.clientY;
+  ptr.tx=hero.x;ptr.ty=hero.y;
+  try{cv.setPointerCapture(e.pointerId)}catch(_){}
+  e.preventDefault();
+});
+cv.addEventListener('pointermove',e=>{
+  if(ptr.on&&e.pointerId===ptr.id&&hero){
+    const evs=e.getCoalescedEvents?e.getCoalescedEvents():[e];
+    for(const ev of (evs.length?evs:[e])){
+      ptr.tx=clampHX(ptr.tx+(ev.clientX-ptr.lx)*SENS);
+      ptr.ty=clampHY(ptr.ty+(ev.clientY-ptr.ly)*SENS);
+      ptr.lx=ev.clientX;ptr.ly=ev.clientY;
+    }
+  }
+  e.preventDefault();
+});
+const up=e=>{if(!e||e.pointerId===ptr.id){ptr.on=false;ptr.id=null}};
 cv.addEventListener('pointerup',up);cv.addEventListener('pointercancel',up);
 addEventListener('keydown',e=>{keys[e.key]=true;if(e.key.startsWith('Arrow'))e.preventDefault()});
 addEventListener('keyup',e=>{keys[e.key]=false});
 document.addEventListener('visibilitychange',()=>{last=performance.now()});
 </script>
-</body>
-</html>
+
+</body></html>
